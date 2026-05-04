@@ -7,6 +7,7 @@ on:
 
 env:
   IMAGE_TAG: ${{ github.sha }}
+  DOCKERHUB_USERNAME: sh1222222
   KUBE_CONFIG_BASE64: ${{ secrets.KUBE_CONFIG_BASE64 }}
   CLOUD_HOST: ${{ secrets.CLOUD_HOST }}
 
@@ -37,17 +38,17 @@ jobs:
       - name: Login to container registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker images
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/cloud-task-backend:${IMAGE_TAG} -t ${{ secrets.DOCKERHUB_USERNAME }}/cloud-task-backend:latest ./backend
-          docker build --build-arg VITE_API_URL="" -t ${{ secrets.DOCKERHUB_USERNAME }}/cloud-task-frontend:${IMAGE_TAG} -t ${{ secrets.DOCKERHUB_USERNAME }}/cloud-task-frontend:latest ./frontend
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/cloud-task-backend:${IMAGE_TAG}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/cloud-task-backend:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/cloud-task-frontend:${IMAGE_TAG}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/cloud-task-frontend:latest
+          docker build -t ${DOCKERHUB_USERNAME}/cloud-task-backend:${IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/cloud-task-backend:latest ./backend
+          docker build --build-arg VITE_API_URL="" -t ${DOCKERHUB_USERNAME}/cloud-task-frontend:${IMAGE_TAG} -t ${DOCKERHUB_USERNAME}/cloud-task-frontend:latest ./frontend
+          docker push ${DOCKERHUB_USERNAME}/cloud-task-backend:${IMAGE_TAG}
+          docker push ${DOCKERHUB_USERNAME}/cloud-task-backend:latest
+          docker push ${DOCKERHUB_USERNAME}/cloud-task-frontend:${IMAGE_TAG}
+          docker push ${DOCKERHUB_USERNAME}/cloud-task-frontend:latest
 
       - name: Deploy to Kubernetes
         if: ${{ env.KUBE_CONFIG_BASE64 != '' }}
@@ -55,6 +56,6 @@ jobs:
           mkdir -p ~/.kube
           echo "${KUBE_CONFIG_BASE64}" | base64 -d > ~/.kube/config
           cp kubernetes/deployment.yaml /tmp/deployment.yaml
-          sed -i "s#__REGISTRY__#${{ secrets.DOCKERHUB_USERNAME }}#g" /tmp/deployment.yaml
+          sed -i "s#__REGISTRY__#${DOCKERHUB_USERNAME}#g" /tmp/deployment.yaml
           sed -i "s#__HOST__#${CLOUD_HOST}#g" /tmp/deployment.yaml
           kubectl apply -f /tmp/deployment.yaml
