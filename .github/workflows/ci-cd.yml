@@ -1,0 +1,59 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Test backend
+        run: |
+          cd backend
+          npm install
+          npm test
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Login to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and push Docker images
+        run: |
+          docker build -t ${{ secrets.REGISTRY }}/backend:${IMAGE_TAG} -t ${{ secrets.REGISTRY }}/backend:latest ./backend
+          docker build --build-arg VITE_API_URL="" -t ${{ secrets.REGISTRY }}/frontend:${IMAGE_TAG} -t ${{ secrets.REGISTRY }}/frontend:latest ./frontend
+          docker push ${{ secrets.REGISTRY }}/backend:${IMAGE_TAG}
+          docker push ${{ secrets.REGISTRY }}/backend:latest
+          docker push ${{ secrets.REGISTRY }}/frontend:${IMAGE_TAG}
+          docker push ${{ secrets.REGISTRY }}/frontend:latest
+
+      - name: Deploy to Kubernetes
+        if: ${{ secrets.KUBE_CONFIG_BASE64 != '' }}
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_BASE64 }}" | base64 -d > ~/.kube/config
+          cp kubernetes/deployment.yaml /tmp/deployment.yaml
+          sed -i "s#__REGISTRY__#${{ secrets.REGISTRY }}#g" /tmp/deployment.yaml
+          sed -i "s#__HOST__#${{ secrets.CLOUD_HOST }}#g" /tmp/deployment.yaml
+          kubectl apply -f /tmp/deployment.yaml
