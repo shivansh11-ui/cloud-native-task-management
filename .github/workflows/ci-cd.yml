@@ -7,6 +7,8 @@ on:
 
 env:
   IMAGE_TAG: ${{ github.sha }}
+  KUBE_CONFIG_BASE64: ${{ secrets.KUBE_CONFIG_BASE64 }}
+  CLOUD_HOST: ${{ secrets.CLOUD_HOST }}
 
 jobs:
   build-test-deploy:
@@ -48,11 +50,11 @@ jobs:
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/cloud-task-frontend:latest
 
       - name: Deploy to Kubernetes
-        if: ${{ secrets.KUBE_CONFIG_BASE64 != '' }}
+        if: ${{ env.KUBE_CONFIG_BASE64 != '' }}
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG_BASE64 }}" | base64 -d > ~/.kube/config
+          echo "${KUBE_CONFIG_BASE64}" | base64 -d > ~/.kube/config
           cp kubernetes/deployment.yaml /tmp/deployment.yaml
           sed -i "s#__REGISTRY__#${{ secrets.DOCKERHUB_USERNAME }}#g" /tmp/deployment.yaml
-          sed -i "s#__HOST__#${{ secrets.CLOUD_HOST }}#g" /tmp/deployment.yaml
+          sed -i "s#__HOST__#${CLOUD_HOST}#g" /tmp/deployment.yaml
           kubectl apply -f /tmp/deployment.yaml
