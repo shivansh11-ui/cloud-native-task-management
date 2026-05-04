@@ -91,12 +91,13 @@ Developer pushes code to GitHub
 ## Required GitHub Secrets
 
 ```txt
-REGISTRY
-REGISTRY_USERNAME
-REGISTRY_PASSWORD
+DOCKERHUB_USERNAME
+DOCKERHUB_TOKEN
 KUBE_CONFIG_BASE64
 CLOUD_HOST
 ```
+
+For the first CI/CD demo, only `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` are required. Kubernetes secrets are needed later when you connect a real cloud cluster.
 
 ## Viva Explanation
 

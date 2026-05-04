@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: __REGISTRY__/backend:latest
+          image: __REGISTRY__/cloud-task-backend:latest
           ports:
             - containerPort: 4000
           env:
@@ -87,7 +87,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: __REGISTRY__/frontend:latest
+          image: __REGISTRY__/cloud-task-frontend:latest
           ports:
             - containerPort: 3000
           readinessProbe:
