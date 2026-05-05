@@ -49,7 +49,16 @@ function App() {
   async function loadTasks() {
     const response = await fetch(`${API_URL}/api/tasks`, { headers });
     const data = await response.json();
-    setTasks(data);
+
+    if (!response.ok) {
+      localStorage.removeItem("token");
+      setToken("");
+      setTasks([]);
+      setMessage(data.message || "Please login again");
+      return;
+    }
+
+    setTasks(Array.isArray(data) ? data : []);
   }
 
   async function addTask(event) {
