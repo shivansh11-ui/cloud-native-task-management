@@ -52,6 +52,19 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "cloud-task-backend" });
 });
 
+app.get("/", (_req, res) => {
+  res.json({
+    service: "cloud-task-backend",
+    status: "running",
+    message: "Backend API is running",
+    endpoints: {
+      health: "/health",
+      login: "POST /api/login",
+      tasks: "/api/tasks"
+    }
+  });
+});
+
 app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
 
